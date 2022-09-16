@@ -1,0 +1,36 @@
+name: Check for updated images
+on:
+  schedule:
+    - cron: '10 19 * * *'
+
+jobs:
+  scan:
+    name: List Recent Updates
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download a single artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: latest-image
+      - name: get image
+        run: |
+             curl -s https://registry.hub.docker.com/v2/repositories/sigp/lighthouse/tags |jq '.results[] |select(.name |test("v[0-9]+.[0-9]+.[0-9]+-modern"))|.name' > RESULT_NEW
+             if [ "$RESULT" != "$RESULT_NEW" ] && echo '::set-output name=TRIGGER::true'
+             echo '::set-output name=LATEST_RESULT::$(cat RESULT_NEW)'
+             mv RESULT_NEW RESULT
+        id: scan
+      - name: Print
+        run: "echo 'Recent updates: ${{ steps.scan.outputs.LATEST_RESULT }}'"
+      - name: Tag Repo
+        uses: richardsimko/update-tag@v1.0.5
+        if: steps.scan.outputs.TRIGGER = 'true'
+        with:
+          tag_name: ${{ steps.scan.outputs.LATEST_RESULT }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Archive results
+        uses: actions/upload-artifact@v3
+        with:
+          name: latest-image
+          path: RESULT
+          retention-days: 2

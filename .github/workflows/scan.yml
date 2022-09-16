@@ -1,8 +1,11 @@
-name: Check for updated images
+name: Check for updates
 on:
-  schedule:
-    - cron: '10 19 * * *'
+#  schedule:
+#    - cron: '*/15 * * * *'
 
+  push:
+    branch:
+      - '**'
 jobs:
   scan:
     name: List Recent Updates
@@ -12,18 +15,21 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: latest-image
+        continue-on-error: true
       - name: get image
         run: |
-             curl -s https://registry.hub.docker.com/v2/repositories/sigp/lighthouse/tags |jq '.results[] |select(.name |test("v[0-9]+.[0-9]+.[0-9]+-modern"))|.name' > RESULT_NEW
-             if [ "$RESULT" != "$RESULT_NEW" ] && echo '::set-output name=TRIGGER::true'
-             echo '::set-output name=LATEST_RESULT::$(cat RESULT_NEW)'
-             mv RESULT_NEW RESULT
+             RESULT_NEW=$(curl -s https://registry.hub.docker.com/v2/repositories/sigp/lighthouse/tags |jq -r '.results[] |select(.name |test("v[0-9]+.[0-9]+.[0-9]+-modern"))|.name')
+             if [ -f RESULT];then  RESULT=${< RESULT};fi
+             echo "$RESULT $RESULT_NEW"
+             if [ "$RESULT" != "$RESULT_NEW" ]; then echo "::set-output name=TRIGGER::true";fi
+             echo "::set-output name=LATEST_RESULT::${RESULT_NEW}"
+             echo "${RESULT_NEW}" > RESULT
         id: scan
       - name: Print
         run: "echo 'Recent updates: ${{ steps.scan.outputs.LATEST_RESULT }}'"
       - name: Tag Repo
         uses: richardsimko/update-tag@v1.0.5
-        if: steps.scan.outputs.TRIGGER = 'true'
+        if: steps.scan.outputs.TRIGGER
         with:
           tag_name: ${{ steps.scan.outputs.LATEST_RESULT }}
         env:

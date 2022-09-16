@@ -11,12 +11,16 @@ jobs:
     name: List Recent Updates
     runs-on: ubuntu-latest
     steps:
-      - name: Download a single artifact
-        uses: actions/download-artifact@v3
+      - name: Download artifact
+        id: download-artifact
+        uses: dawidd6/action-download-artifact@v2
         with:
+          workflow: scan.yml
+          workflow_conclusion: success
           name: latest-image
-          path: RESULT
-        continue-on-error: true
+          # Optional, a directory where to extract artifact(s), defaults to the current directory
+          path: .
+          if_no_artifact_found: warn
       - name: test
         run: cat RESULT
         continue-on-error: true

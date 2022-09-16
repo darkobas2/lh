@@ -4,7 +4,7 @@ on:
     - cron: '9 9 * * *'
 
   push:
-    branch:
+    tag:
       - '**'
 jobs:
   scan:
@@ -27,21 +27,22 @@ jobs:
       - name: get image
         run: |
              RESULT_NEW=$(curl -s https://registry.hub.docker.com/v2/repositories/sigp/lighthouse/tags |jq -r '.results[] |select(.name |test("v[0-9]+.[0-9]+.[0-9]+-modern"))|.name')
-             if [ -f RESULT];then  RESULT=${< RESULT};fi
+             if [ -f ./RESULT ];then  RESULT=$(cat ./RESULT);fi
              echo "$RESULT $RESULT_NEW"
-             if [ "$RESULT" != "$RESULT_NEW" ]; then echo "::set-output name=TRIGGER::true";fi
+             if [ "$RESULT" != "$RESULT_NEW" ]; then echo "::set-output name=TRIGGER::'true'";fi
              echo "::set-output name=LATEST_RESULT::${RESULT_NEW}"
              echo "${RESULT_NEW}" > RESULT
         id: scan
       - name: Print
         run: "echo 'Recent updates: ${{ steps.scan.outputs.LATEST_RESULT }}'"
-      - name: Tag Repo
-        uses: richardsimko/update-tag@v1.0.5
-        if: steps.scan.outputs.TRIGGER
+      - name: Print
+        run: "echo 'Trigger: ${{ steps.scan.outputs.TRIGGER }}'"
+      - name: Tag commit
+        if: ${{ steps.scan.outputs.TRIGGER }} == 'true'
+        uses: tvdias/github-tagger@v0.0.1
         with:
-          tag_name: ${{ steps.scan.outputs.LATEST_RESULT }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          repo-token: "${{ secrets.ACCESS_TOKEN }}"
+          tag: "${{ steps.scan.outputs.LATEST_RESULT }}"
       - name: Archive results
         uses: actions/upload-artifact@v3
         with:

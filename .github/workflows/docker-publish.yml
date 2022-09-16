@@ -13,11 +13,6 @@ on:
   push:
     tags:
       - '**'
-
-  create:
-    tags:
-      - '**'
-
 env:
   REF: ${{ github.ref }}
 

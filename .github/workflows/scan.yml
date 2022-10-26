@@ -30,8 +30,8 @@ jobs:
              if [ -z "${RESULT_CHECK}" ]; then RESULT_CHECK=$(curl -s https://registry.hub.docker.com/v2/repositories/sigp/lighthouse/tags?page=1 |jq -r '.results[] |select(.name |test("v[0-9]+.[0-9]+.[0-9]+-modern"))|.name' | head -n 1);fi
              if [ -z "${RESULT_CHECK}" ]; then RESULT_CHECK=$(curl -s https://registry.hub.docker.com/v2/repositories/sigp/lighthouse/tags?page=2 |jq -r '.results[] |select(.name |test("v[0-9]+.[0-9]+.[0-9]+-modern"))|.name' | head -n 1);fi
              if [ -f ./RESULT ];then  FILE=$(cat ./RESULT);fi
-             if [ "$FILE" != "$RESULT_CHECK" ]; then echo "${TRIGGER}=true" >> $GITHUB_OUTPUT ;fi
-             echo "${LATEST_RESULT}="$RESULT_CHECK >> $GITHUB_OUTPUT
+             if [ "$FILE" != "$RESULT_CHECK" ]; then echo "TRIGGER=true" >> $GITHUB_OUTPUT ;fi
+             echo "LATEST_RESULT="$RESULT_CHECK >> $GITHUB_OUTPUT
              echo "${RESULT_CHECK}" > RESULT
         id: scan
       - name: Print

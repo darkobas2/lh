@@ -6,7 +6,7 @@ on:
     tag:
       - '**'
     branches:
-      - master
+      - main
 jobs:
   scan:
     name: List Recent Updates

@@ -1,13 +1,12 @@
 name: Check for updates
 on:
-  push:
-    branches:
-      - master
   schedule:
     - cron: '9 9 * * *'
   push:
     tag:
       - '**'
+    branches:
+      - master
 jobs:
   scan:
     name: List Recent Updates

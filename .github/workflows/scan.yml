@@ -1,7 +1,8 @@
 name: Check for updates
 on:
-  branches:
-    - master
+  push:
+    branches:
+      - master
   schedule:
     - cron: '9 9 * * *'
   push:

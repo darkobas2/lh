@@ -48,7 +48,7 @@ jobs:
           repo-token: "${{ secrets.ACCESS_TOKEN }}"
           tag: "${{ steps.scan.outputs.LATEST_RESULT }}"
       - name: Archive results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: latest-image
           path: RESULT

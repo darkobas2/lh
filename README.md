@@ -1,1 +1,1 @@
-Lighthouse with curl
+Lighthouse

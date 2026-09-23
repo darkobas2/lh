@@ -3,18 +3,19 @@ on:
   schedule:
     - cron: '9 9 * * *'
   push:
-    tag:
-      - '**'
     branches:
       - main
 jobs:
   scan:
     name: List Recent Updates
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: write
     steps:
       - name: Download artifact
         id: download-artifact
-        uses: dawidd6/action-download-artifact@v6
+        uses: dawidd6/action-download-artifact@v24
         with:
           workflow: scan.yml
           workflow_conclusion: success
@@ -43,10 +44,24 @@ jobs:
         run: "echo 'Trigger: ${{ steps.scan.outputs.TRIGGER }}'"
       - name: Tag commit
         if: steps.scan.outputs.TRIGGER
-        uses: tvdias/github-tagger@v0.0.1
-        with:
-          repo-token: "${{ secrets.ACCESS_TOKEN }}"
-          tag: "${{ steps.scan.outputs.LATEST_RESULT }}"
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.scan.outputs.LATEST_RESULT }}
+        run: |
+          if gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${TAG}" >/dev/null 2>&1; then
+            echo "Tag ${TAG} already exists, not recreating"
+          else
+            gh api "repos/${GITHUB_REPOSITORY}/git/refs" \
+              -f ref="refs/tags/${TAG}" -f sha="${GITHUB_SHA}"
+          fi
+      # Tags pushed with GITHUB_TOKEN do not trigger other workflows,
+      # so start the image build explicitly.
+      - name: Build image for tag
+        if: steps.scan.outputs.TRIGGER
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.scan.outputs.LATEST_RESULT }}
+        run: gh workflow run docker-publish.yml -R "${GITHUB_REPOSITORY}" --ref "${TAG}"
       - name: Archive results
         uses: actions/upload-artifact@v4
         with:
